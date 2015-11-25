@@ -1,34 +1,42 @@
 $LOAD_PATH << '.'
 
+seed = ARGV[0].to_i
+if seed == ""
+  seed = 30   # Note: 0 works just as well
+end
+
 set = "ABCDE".split("").permutation.collect {|p| p.join }
 
-keycode = set.delete(set[0])
+keycode = set.delete(set[seed])
 while set.length > 0
   n = set.select {|p| p.start_with?(keycode[-4..-1])} # find next matching sequence
   if n[0]
     keycode += n[0][-1] # Add the last letter, rolling the code
     set.delete(n[0])
   else
-    keycode += set[0]   # Need to start a new chain, pick first element remaining in set
-    set.delete(set[0])
+    # find the best available key to start with
+    n = set.select {|p| p.start_with?(keycode[-3..-1])} 
+    if n[0]
+      keycode += n[0][-2..-1] # take last two characters
+      set.delete(n[0])
+    else
+      n = set.select {|p| p.start_with?(keycode[-2..-1])} 
+      if n[0]
+        keycode += n[0][-3..-1] # take last three characters
+        set.delete(n[0])
+      else
+        n = set.select {|p| p.start_with?(keycode[-1])} 
+        if n[0]
+          keycode += n[0][-4..-1] # take last four characters
+          set.delete(n[0])
+        else
+          keycode += set[0]   # Need to start a new chain, pick first element remaining in set
+          set.delete(set[0])
+        end
+      end
+    end  
   end
 end
 
-# Check for any duplicates embedded in the string
-i = 0
-morestring = true
-while morestring
-  key = keycode[i, 5]
-  off = keycode.index(key, i+1)
-  if off 
-    pre = keycode.slice(0, off) 
-    post = keycode.slice((off+5)..-1)
-    keycode = pre + post
-  end
-  i += 1    
-  if i+5 > keycode.length  
-    morestring = false
-  end
-end
-
-puts "length: #{keycode.length}\nKey: #{keycode}"
+#puts "length: #{keycode.length} using #{seed}:#{keycode[0..4]} as seed\n"
+puts "#{keycode}"
